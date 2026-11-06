@@ -1,5 +1,6 @@
 CFLAGS = -Wall -Wextra
 
+
 client : client.o
 	clang -o client client.o
 server : server.o

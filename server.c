@@ -9,6 +9,7 @@
 
 #define PORT "4242"
 #define BUF_SIZE 64
+#define BACKLOG_SIZE 6
 
 void handle_errors(int status, char* message){
 	if (status!=0){
@@ -38,35 +39,43 @@ int main(void){
 	handle_errors(status, "Error on binding listening socket");
 
 	// listening for clients
-	printf("Listening...\n");
-	status = listen(sockfd_listen, 1);
+	status = listen(sockfd_listen, BACKLOG_SIZE);
 	handle_errors(status, "Error on listen call");
-
-	// get communication socket
-	int sockfd = accept(sockfd_listen, NULL, NULL);
-	printf("Accepted connection.\n");
+	printf("Listening started.\n");
 
 	char buf[BUF_SIZE];
 
 	for(;;){
+		// parent accepts and sends to children
+		printf("Pid %d : Waiting on accept...\n", getpid());
+		sleep(1);
+		int sockfd = accept(sockfd_listen, NULL, NULL);
+		pid_t pid = fork();
 
-		// check for receiving
-		ssize_t n = recv(sockfd, buf, BUF_SIZE-1, 0);
 
-		if(n==0) break; // connection terminated
+		if (pid==0){
+			printf("Accepted connection on pid %d\n", getpid());
+			// child closes listen socket, handles communication
+			close(sockfd_listen);
 
-		buf[n] = '\0';
+			for (;;){ // recv loop
+				ssize_t n = recv(sockfd, buf, BUF_SIZE-1, 0);
+				if(n==0) break; // connection terminated
+				buf[n] = '\0';
+				printf("Pid %d : %s", getpid(), buf);
+			}
 
-		printf("Buf : %s", buf);
+			printf("Pid %d : Disconnected\n", getpid());
 
+			close(sockfd); // disconnected.
+			exit(0);
+		}
 
 
 	}
 
-
 	// cleanup
 	close(sockfd_listen);
-	close(sockfd);
 
 	return EXIT_SUCCESS;
 }

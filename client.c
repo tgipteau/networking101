@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +22,7 @@ void handle_errors(int status, char* message){
 }
 
 
-int main(void){
+int main(int argc, char *argv[]){
 
 
 	// define server_info hints
@@ -45,8 +46,18 @@ int main(void){
 	char buf[BUF_SIZE];
 
 	for(;;){
-		fgets(buf, BUF_SIZE, stdin);
-		send(sockfd, buf, BUF_SIZE-1, 0);
+
+		if (argc>1){
+			printf("Sending Bonjour\n");
+			strcpy(buf, "Bonjour\n");
+			send(sockfd, buf, BUF_SIZE-1, 0);
+			sleep(1);
+		}
+		else {
+			fgets(buf, BUF_SIZE, stdin);
+			send(sockfd, buf, BUF_SIZE-1, 0);
+		}
+
 	}
 
 
